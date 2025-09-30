@@ -1,59 +1,87 @@
 import React from "react"
-import {Button, Card, CardContent, Grid, Paper, Typography} from "@mui/material";
+import {Button, Card, CardContent, Grid, Typography, Chip, Stack, Divider, Box} from "@mui/material";
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import DoneIcon from '@mui/icons-material/Done';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 
-export const Order = () => {
+export type OrderStatus = 'queued' | 'in_progress' | 'ready';
+
+export interface OrderModel {
+    id: string;
+    priority: 'LOW' | 'MEDIUM' | 'HIGH';
+    size: 'SMALL' | 'MEDIUM' | 'LARGE';
+    crust: 'THIN' | 'REGULAR' | 'DEEP DISH';
+    modifications: string[];
+    items: string[];
+    serviceType: 'DINE IN' | 'TAKEOUT' | 'DELIVERY';
+    etaMinutes: number;
+    status: OrderStatus;
+}
+
+interface OrderProps {
+    order: OrderModel;
+    onAdvance: (id: string) => void;
+}
+
+const priorityColor: Record<OrderModel['priority'], 'default' | 'success' | 'warning' | 'error'> = {
+    LOW: 'default',
+    MEDIUM: 'warning',
+    HIGH: 'error'
+};
+
+const statusLabel: Record<OrderStatus, string> = {
+    queued: 'Queued',
+    in_progress: 'In Progress',
+    ready: 'Ready'
+};
+
+export const Order: React.FC<OrderProps> = ({ order, onAdvance }) => {
+    const canAdvance = order.status !== 'ready';
+
     return (
-        <Grid item md={3} lg={3} sm={3}>
-            <Card variant={'outlined'}>
-                <CardContent>
-                    <Grid container spacing={2}>
-                        <Grid item md={12} sm={12}>
-                            <Paper variant={'outlined'}>
-                                <Typography>HIGH</Typography>
-                            </Paper>
-                        </Grid>
-                        <Grid item md={6} sm={6}>
-                            <img width={'170px'} src={'./pizza.jpeg'} alt={''}/>
-                        </Grid>
-                        <Grid item md={6} sm={6}>
-                            <Paper variant={'outlined'}>
-                                <Typography>LARGE</Typography>
-                                ----------------
-                                <Typography>THIN</Typography>
-                            </Paper>
-                        </Grid>
-                        <Grid item md={6} sm={6}>
-                            <Paper variant={'outlined'}>
-                                <Typography>- Extra Cheese</Typography>
-                                <Typography>- No Onions</Typography>
-                            </Paper>
-                        </Grid>
-                        <Grid item md={6} sm={6}>
-                            <Paper variant={'outlined'}>
-                                <Typography>1. Pepperoni</Typography>
-                                <Typography>2. Mushrooms</Typography>
-                            </Paper>
-                        </Grid>
-                        <Grid item md={12} sm={12}>
-                            <Paper variant={'outlined'}>DINE IN</Paper>
-                        </Grid>
-                        <Grid item md={12} sm={12}>
-                            <Paper variant={'outlined'}>15 minutes</Paper>
-                        </Grid>
-                        <Grid item md={12} sm={12}>
-                            <PlayArrowIcon color={'primary'} sx={{fontSize: 40}}/>
-                            <HourglassEmptyIcon color={'secondary'} sx={{fontSize: 40}}/>
-                            <DoneIcon color={'success'} sx={{fontSize: 40}}/>
-                        </Grid>
-                        <Grid item md={12} sm={12}>
-                            <Button variant={'contained'} fullWidth> Mark as Ready</Button>
-                        </Grid>
-                    </Grid>
+            <Card variant="outlined" sx={{ borderRadius: 1.25 }}>
+                <CardContent sx={{ p: 0.75 }}>
+                    <Stack spacing={0.5}>
+                        {/* Header */}
+                        <Stack direction="row" alignItems="center" justifyContent="space-between">
+                            <Chip size="small" label={order.priority} color={priorityColor[order.priority]} variant="outlined" />
+                            <Chip size="small" label={statusLabel[order.status]} color={order.status === 'ready' ? 'success' : order.status === 'in_progress' ? 'primary' : 'default'} />
+                        </Stack>
+
+                        {/* Main Info */}
+                        <Typography sx={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>
+                            {order.size} • {order.crust}
+                        </Typography>
+                        <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
+                            {order.items.join(', ') || 'No items'}
+                        </Typography>
+                        {order.modifications.length > 0 && (
+                            <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
+                                {order.modifications.map(m => `- ${m}`).join('  ')}
+                            </Typography>
+                        )}
+
+                        <Divider flexItem sx={{ my: 0.4 }} />
+
+                        {/* Meta */}
+                        <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap" alignItems="center">
+                            <Chip size="small" variant="outlined" label={order.serviceType} />
+                            <Chip size="small" variant="outlined" label={`${order.etaMinutes} min`} />
+                            <Box sx={{ ml: 'auto' }}>
+                                <PlayArrowIcon color={order.status === 'in_progress' ? 'primary' : 'disabled'} sx={{ fontSize: 14, mr: 0.25 }}/>
+                                <HourglassEmptyIcon color={order.status === 'queued' ? 'secondary' : 'disabled'} sx={{ fontSize: 14, mr: 0.25 }}/>
+                                <DoneIcon color={order.status === 'ready' ? 'success' : 'disabled'} sx={{ fontSize: 14 }}/>
+                            </Box>
+                        </Stack>
+
+                        {/* Action */}
+                        <Button size="small" variant="contained" fullWidth sx={{ py: 0.35 }} disabled={!canAdvance} onClick={() => onAdvance(order.id)}>
+                            {order.status === 'queued' && 'Start'}
+                            {order.status === 'in_progress' && 'Mark as Ready'}
+                            {order.status === 'ready' && 'Ready'}
+                        </Button>
+                    </Stack>
                 </CardContent>
             </Card>
-        </Grid>
     )
 }
